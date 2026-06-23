@@ -52,9 +52,26 @@ class PendingProviderAdmin(CustomUserAdmin):
     search_fields = ('email', 'full_name', 'organization', 'license_number')
     ordering = ('-date_joined',)
 
+    # Unclutter edit layout: show only provider info and the is_verified checkbox
+    fieldsets = (
+        ('Provider Information', {
+            'fields': ('full_name', 'email', 'phone_number', 'title', 'organization', 'license_number', 'view_license_file')
+        }),
+        ('Verification Decision', {
+            'fields': ('is_verified',),
+            'description': 'Toggle this field to Yes/True to approve the provider. Deleting this record will reject and decline their application.'
+        }),
+    )
+
+    readonly_fields = ('full_name', 'email', 'phone_number', 'title', 'organization', 'license_number', 'view_license_file')
+
+    # Registrations should only originate from the signup API
+    def has_add_permission(self, request):
+        return False
+
     def get_queryset(self, request):
-        # Only show unverified provider accounts
         return super().get_queryset(request).filter(role=User.PROVIDER, is_verified=False)
+
 
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(PendingProvider, PendingProviderAdmin)
