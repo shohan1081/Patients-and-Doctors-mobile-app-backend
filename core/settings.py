@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -168,4 +169,35 @@ CORS_ALLOW_ALL_ORIGINS = True
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'Wellness Simplified <noreply@wellnesssimplified.com>'
 FRONTEND_LOGIN_URL = 'http://localhost:3000/login' # Replace with actual frontend URL in production
+
+# Django Unfold Configuration
+UNFOLD = {
+    "SITE_TITLE": "Wellness Simplified Admin",
+    "SITE_HEADER": "Wellness Simplified",
+    "SITE_SUBHEADER": "Control Panel",
+    "SHOW_HISTORY": True,
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": "User Administration",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Users & Admins",
+                        "icon": "people",
+                        "link": "/admin/users/user/",
+                    },
+                    {
+                        "title": "Pending Verifications",
+                        "icon": "domain_verification",
+                        "link": "/admin/users/pendingprovider/",
+                    },
+                ],
+            },
+        ],
+    },
+}
+
 
