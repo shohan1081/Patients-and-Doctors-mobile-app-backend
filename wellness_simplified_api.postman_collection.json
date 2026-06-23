@@ -1,0 +1,155 @@
+{
+	"info": {
+		"_postman_id": "6d953f93-cb72-4d0a-b31c-3b0bebfdc1b4",
+		"name": "Wellness Simplified App",
+		"description": "API requests for the Wellness Simplified application, including user registration, authentication, and token management.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication & Users",
+			"item": [
+				{
+					"name": "Register Provider",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "full_name",
+									"value": "Dr. Jane Smith",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "janesmith@wellness.com",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "+1-555-0199",
+									"type": "text"
+								},
+								{
+									"key": "organization",
+									"value": "Primary Health Inc.",
+									"type": "text"
+								},
+								{
+									"key": "license_number",
+									"value": "MD-987654321",
+									"type": "text"
+								},
+								{
+									"key": "title",
+									"value": "Medical Doctor (MD)",
+									"type": "text"
+								},
+								{
+									"key": "license_file",
+									"type": "file",
+									"description": "Upload a PDF or image of the provider license."
+								},
+								{
+									"key": "password",
+									"value": "P@ssword123!",
+									"type": "text"
+								},
+								{
+									"key": "confirm_password",
+									"value": "P@ssword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/register/provider/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register",
+								"provider",
+								""
+							]
+						},
+						"description": "Registers a new healthcare provider. Note that provider accounts start as unverified (`is_verified=False`) and cannot log in until approved in the admin panel."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"janesmith@wellness.com\",\n    \"password\": \"P@ssword123!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/login/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"login",
+								""
+							]
+						},
+						"description": "Logs in the user and returns simplejwt access and refresh tokens. For provider accounts, the user must be verified by an administrator, otherwise a 400 bad request validation error is returned."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh\": \"your_refresh_token_here\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/token/refresh/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"token",
+								"refresh",
+								""
+							]
+						},
+						"description": "Uses a refresh token to obtain a fresh access token."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		}
+	]
+}
