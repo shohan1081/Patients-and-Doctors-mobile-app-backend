@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
@@ -316,9 +316,10 @@ class User(AbstractUser):
         return f"{self.email} ({self.role})"
 
 
-class PendingProviderManager(models.Manager):
+class PendingProviderManager(UserManager):
     def get_queryset(self):
         return super().get_queryset().filter(role='provider', is_verified=False)
+
 
 
 class PendingProvider(User):
