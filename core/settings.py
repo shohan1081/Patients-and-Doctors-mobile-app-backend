@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -165,9 +166,20 @@ SIMPLE_JWT = {
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Email Configuration for Development
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'Wellness Simplified <noreply@wellnesssimplified.com>'
+# Email Configuration (SMTP with Console Fallback)
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+    DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f'Wellness Simplified <{EMAIL_HOST_USER}>')
+else:
+    # Development Fallback to console printout
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'Wellness Simplified <noreply@wellnesssimplified.com>'
 FRONTEND_LOGIN_URL = 'http://localhost:3000/login' # Replace with actual frontend URL in production
 
 # Django Unfold Configuration
