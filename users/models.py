@@ -319,7 +319,20 @@ class User(AbstractUser):
 class PendingProviderManager(UserManager):
     def get_queryset(self):
         return super().get_queryset().filter(role='provider', is_verified=False)
+class ProviderProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='provider_profile')
+    bio = models.TextField(blank=True, null=True)
+    specialty = models.CharField(max_length=255, blank=True, null=True)
+    experience_years = models.IntegerField(default=0)
+    clinic_address = models.TextField(blank=True, null=True)
+    consultation_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    profile_photo = models.ImageField(upload_to='providers/photos/', blank=True, null=True)
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"Profile for {self.user.email}"
 
 
 class PendingProvider(User):
