@@ -332,8 +332,10 @@ class PendingProvider(User):
 
 
 @receiver(pre_delete, sender=User)
+@receiver(pre_delete, sender=PendingProvider)
 def send_rejection_email_on_delete(sender, instance, **kwargs):
     if instance.role == User.PROVIDER and not instance.is_verified:
         instance.send_rejection_notification()
+
 
 
