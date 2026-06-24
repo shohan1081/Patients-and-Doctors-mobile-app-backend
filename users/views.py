@@ -1,7 +1,7 @@
 from rest_framework import generics, status, permissions, serializers
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import ProviderRegistrationSerializer, UserSerializer
+from .serializers import ProviderRegistrationSerializer, UserSerializer, ProviderProfileSerializer
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -28,6 +28,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+from .models import ProviderProfile
+from rest_framework.permissions import IsAuthenticated
+
+class ProviderProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = ProviderProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Automatically get or create profile for the logged in provider
+        profile, created = ProviderProfile.objects.get_or_create(user=self.request.user)
+        return profile
+
 class ProviderRegistrationView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = ProviderRegistrationSerializer
@@ -43,3 +55,4 @@ class ProviderRegistrationView(generics.CreateAPIView):
             status=status.HTTP_201_CREATED,
             headers=headers
         )
+
