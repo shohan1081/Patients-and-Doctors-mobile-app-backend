@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "6d953f93-cb72-4d0a-b31c-3b0bebfdc1b4",
 		"name": "Wellness Simplified App",
-		"description": "API requests for the Wellness Simplified application, including user registration, authentication, and token management.",
+		"description": "API requests for the Wellness Simplified application, including user registration, authentication, scheduling, bookings, and messaging.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -12,6 +12,9 @@
 				{
 					"name": "Register Provider",
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -83,7 +86,27 @@
 				},
 				{
 					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access) {",
+									"    pm.environment.set(\"access_token\", jsonData.access);",
+									"}",
+									"if (jsonData.refresh) {",
+									"    pm.environment.set(\"refresh_token\", jsonData.refresh);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -114,11 +137,14 @@
 				{
 					"name": "Refresh Token",
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"refresh\": \"your_refresh_token_here\"\n}",
+							"raw": "{\n    \"refresh\": \"{{refresh_token}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -141,10 +167,425 @@
 						"description": "Uses a refresh token to obtain a fresh access token."
 					},
 					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/profile/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile",
+								""
+							]
+						},
+						"description": "Retrieves the logged-in doctor's professional profile details."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"bio\": \"Dr. Jane Smith has over 10 years of experience in cardiology and cardiovascular healthcare.\",\n    \"specialty\": \"Cardiologist\",\n    \"experience_years\": 12,\n    \"clinic_address\": \"Suite 404, Primary Health Care Clinic, NYC\",\n    \"consultation_fee\": \"150.00\",\n    \"is_available\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/profile/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile",
+								""
+							]
+						},
+						"description": "Updates the professional profile details for the logged-in provider."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Scheduling & Availability",
+			"item": [
+				{
+					"name": "Add Availability Slot",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"day_of_week\": 1,\n    \"start_time\": \"09:00:00\",\n    \"end_time\": \"17:00:00\",\n    \"slot_duration\": 30,\n    \"is_active\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/availability/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"availability",
+								""
+							]
+						},
+						"description": "Adds a weekly availability hours template for the doctor. day_of_week: 0 (Monday) to 6 (Sunday)."
+					},
+					"response": []
+				},
+				{
+					"name": "List Availability Hours",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/availability/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"availability",
+								""
+							]
+						},
+						"description": "Lists the weekly availability schedule set by the logged-in doctor."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Availability Slot",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/availability/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"availability",
+								"1",
+								""
+							]
+						},
+						"description": "Deletes a specific availability template by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Available Slots (Public/Patient)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/available-slots/?doctor_id=2&date=2026-06-25",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"available-slots",
+								""
+							],
+							"query": [
+								{
+									"key": "doctor_id",
+									"value": "2"
+								},
+								{
+									"key": "date",
+									"value": "2026-06-25"
+								}
+							]
+						},
+						"description": "Dynamically calculates and returns free 30-minute appointment slots for a specific doctor on a given date by reading their availability template and filtering out booked appointments."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Appointments & Bookings",
+			"item": [
+				{
+					"name": "Create Appointment (Book Slot)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"doctor\": 2,\n    \"date\": \"2026-06-25\",\n    \"start_time\": \"09:30:00\",\n    \"reason_for_visit\": \"Routine cardiovascular health checkup.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/bookings/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"bookings",
+								""
+							]
+						},
+						"description": "Allows a patient to book a free slot with a doctor. The slot end_time is automatically computed by the server."
+					},
+					"response": []
+				},
+				{
+					"name": "List Bookings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/bookings/?status=pending",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"bookings",
+								""
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending"
+								}
+							]
+						},
+						"description": "Lists appointments. If logged in as doctor, lists doctor bookings. If patient, lists patient bookings. Can filter by query parameter: `?status=pending`, `?status=accepted`, etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Accept Booking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/bookings/1/accept/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"bookings",
+								"1",
+								"accept",
+								""
+							]
+						},
+						"description": "Action view for doctors to approve a pending appointment."
+					},
+					"response": []
+				},
+				{
+					"name": "Decline Booking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/bookings/1/decline/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"bookings",
+								"1",
+								"decline",
+								""
+							]
+						},
+						"description": "Action view for doctors to reject a pending appointment request."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Booking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/bookings/1/cancel/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"bookings",
+								"1",
+								"cancel",
+								""
+							]
+						},
+						"description": "Allows both patients and doctors to cancel a booked appointment."
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Booking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"notes\": \"Patient has stable BP. Advised to continue current medications.\",\n    \"prescription\": \"Amlodipine 5mg once daily for 30 days.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/bookings/1/complete/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"bookings",
+								"1",
+								"complete",
+								""
+							]
+						},
+						"description": "Action view for doctors to mark an appointment as complete and attach professional notes and prescriptions."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat & Messaging",
+			"item": [
+				{
+					"name": "Create or Retrieve Room",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"doctor\": 2,\n    \"patient\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat/rooms/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat",
+								"rooms",
+								""
+							]
+						},
+						"description": "Creates a chat room between a doctor and a patient. If a room already exists for this pair, it securely returns the existing room."
+					},
+					"response": []
+				},
+				{
+					"name": "List Active Chat Rooms",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/chat/rooms/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat",
+								"rooms",
+								""
+							]
+						},
+						"description": "Lists all active chat rooms involving the currently logged-in user, with nested previews of the last message."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Room Messages History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/chat/rooms/1/messages/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat",
+								"rooms",
+								"1",
+								"messages",
+								""
+							]
+						},
+						"description": "Retrieves the historical chat message logs for a specific room. Automatically updates incoming messages status to read."
+					},
+					"response": []
 				}
 			]
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
 	"variable": [
 		{
 			"key": "base_url",
