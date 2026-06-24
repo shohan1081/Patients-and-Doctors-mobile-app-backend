@@ -1,11 +1,18 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.safestring import mark_safe
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, StackedInline
 from unfold.decorators import action
-from .models import User, PendingProvider
+from .models import User, PendingProvider, ProviderProfile
+
+class ProviderProfileInline(StackedInline):
+    model = ProviderProfile
+    can_delete = False
+    verbose_name_plural = 'Provider Professional Profile'
+    fk_name = 'user'
 
 class CustomUserAdmin(UserAdmin, ModelAdmin):
+    inlines = (ProviderProfileInline,)
     list_display = ('email', 'full_name', 'role', 'is_verified', 'is_staff')
     list_filter = ('role', 'is_verified', 'is_staff', 'is_active')
     search_fields = ('email', 'full_name', 'organization', 'license_number')
