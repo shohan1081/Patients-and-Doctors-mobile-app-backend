@@ -17,6 +17,22 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env or .evn file manually if present
+for env_filename in ('.env', '.evn'):
+    dotenv_path = BASE_DIR / env_filename
+    if dotenv_path.exists():
+        try:
+            with open(dotenv_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, val = line.split('=', 1)
+                        val = val.strip().strip('\'"')
+                        os.environ[key.strip()] = val
+        except Exception as e:
+            pass
+        break
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
