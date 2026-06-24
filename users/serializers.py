@@ -43,7 +43,22 @@ class ProviderRegistrationSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+from .models import ProviderProfile
+
+class ProviderProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProviderProfile
+        fields = (
+            'bio', 'specialty', 'experience_years', 'clinic_address', 
+            'consultation_fee', 'profile_photo', 'is_available', 
+            'created_at', 'updated_at'
+        )
+        read_only_fields = ('created_at', 'updated_at')
+
 class UserSerializer(serializers.ModelSerializer):
+    provider_profile = ProviderProfileSerializer(read_only=True)
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'full_name', 'role', 'is_verified')
+        fields = ('id', 'email', 'full_name', 'role', 'is_verified', 'provider_profile')
+
