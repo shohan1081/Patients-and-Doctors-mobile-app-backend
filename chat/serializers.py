@@ -12,8 +12,8 @@ class ChatRoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatRoom
-        fields = ('id', 'doctor', 'patient', 'doctor_detail', 'patient_detail', 'last_message', 'created_at')
-        read_only_fields = ('created_at',)
+        fields = ('id', 'doctor', 'patient', 'status', 'doctor_detail', 'patient_detail', 'last_message', 'created_at')
+        read_only_fields = ('status', 'created_at')
 
     def get_last_message(self, obj):
         msg = obj.messages.last()
