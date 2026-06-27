@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class DoctorAvailability(models.Model):
     WEEKDAYS = [
@@ -66,3 +67,99 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.patient.full_name} with {self.doctor.full_name} on {self.date} at {self.start_time}"
+
+
+class DoctorPatientRelation(models.Model):
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'provider'},
+        related_name='provider_patients'
+    )
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'patient'},
+        related_name='patient_doctors'
+    )
+    disease_title = models.CharField(max_length=255, blank=True, null=True)
+
+    health_goals = models.TextField(blank=True, null=True)
+    current_conditions = models.TextField(blank=True, null=True)
+    current_medications = models.TextField(blank=True, null=True)
+    allergies_intolerances = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('doctor', 'patient')
+
+    def __str__(self):
+        return f"Relation: Doctor {self.doctor.full_name} -> Patient {self.patient.full_name}"
+
+
+class Protocol(models.Model):
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'provider'},
+        related_name='created_protocols'
+    )
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'patient'},
+        related_name='assigned_protocols'
+    )
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    instructions = models.TextField(blank=True, null=True)
+    duration = models.CharField(max_length=100)  # e.g., "3 days", "2 weeks", "1 month"
+    start_date = models.DateField()
+    end_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Protocol '{self.name}' assigned to {self.patient.full_name}"
+
+    @property
+    def total_days(self):
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days + 1
+        return 0
+
+    @property
+    def completed_days(self):
+        return self.daily_logs.count()
+
+    @property
+    def progress_percentage(self):
+        total = self.total_days
+        if total > 0:
+            pct = (self.completed_days / total) * 100
+            return min(round(pct, 2), 100.0)
+        return 0.0
+
+
+class ProtocolLog(models.Model):
+    protocol = models.ForeignKey(
+        Protocol,
+        on_delete=models.CASCADE,
+        related_name='daily_logs'
+    )
+    date = models.DateField()
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('protocol', 'date')
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"Log: Protocol '{self.protocol.name}' completed on {self.date}"
+
+
