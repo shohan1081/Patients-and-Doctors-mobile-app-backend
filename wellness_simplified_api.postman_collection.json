@@ -85,6 +85,40 @@
 					"response": []
 				},
 				{
+					"name": "Register Patient",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"full_name\": \"John Doe\",\n    \"email\": \"johndoe@example.com\",\n    \"phone_number\": \"+1-555-0100\",\n    \"password\": \"P@ssword123!\",\n    \"confirm_password\": \"P@ssword123!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/register/patient/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register",
+								"patient",
+								""
+							]
+						},
+						"description": "Registers a new patient. Patient accounts are active and verified by default and can log in immediately."
+					},
+					"response": []
+				},
+				{
 					"name": "Login",
 					"event": [
 						{
@@ -216,6 +250,179 @@
 							]
 						},
 						"description": "Updates the professional profile details for the logged-in provider."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Patient Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/profile/patient/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile",
+								"patient",
+								""
+							]
+						},
+						"description": "Retrieves the logged-in patient's profile details."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Patient Profile",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "full_name",
+									"value": "John Updated Doe",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "johndoe_updated@example.com",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "+1-555-0100",
+									"type": "text"
+								},
+								{
+									"key": "date_of_birth",
+									"value": "1995-10-15",
+									"type": "text"
+								},
+								{
+									"key": "gender",
+									"value": "male",
+									"type": "text"
+								},
+								{
+									"key": "health_goal",
+									"value": "Gain muscle mass and stay fit.",
+									"type": "text"
+								},
+								{
+									"key": "profile_photo",
+									"type": "file",
+									"description": "Upload a profile photo image file."
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/profile/patient/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile",
+								"patient",
+								""
+							]
+						},
+						"description": "Updates the profile details for the logged-in patient, supporting both User details (name, email, phone) and PatientProfile fields (date of birth, gender, health goal)."
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"current_password\": \"P@ssword123!\",\n    \"new_password\": \"NewP@ssword123!\",\n    \"confirm_password\": \"NewP@ssword123!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/change-password/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"change-password",
+								""
+							]
+						},
+						"description": "Allows any authenticated user (doctor or patient) to update their password by verifying their current password."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Doctor List (Patient)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/doctors/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"doctors",
+								""
+							]
+						},
+						"description": "Retrieves the full list of verified doctors, including their profiles, photos, specialties, fees, and addresses, so patients can search and message them."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Patient List (Doctor)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/patients/?search=&name=&number=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"patients",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Optional search term to filter patients by name, email, or phone number"
+								},
+								{
+									"key": "name",
+									"value": "",
+									"description": "Optional search term to filter patients by name"
+								},
+								{
+									"key": "number",
+									"value": "",
+									"description": "Optional search term to filter patients by phone number"
+								}
+							]
+						},
+						"description": "Retrieves the full list of patients for the doctor side. The response contains simplified fields including 'name', 'photo', 'mobile_number', and 'is_added' (boolean indicating if the doctor has added the patient). Supports filtering via query parameters 'search', 'name', or 'number'."
 					},
 					"response": []
 				}
@@ -535,7 +742,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/chat/rooms/",
+							"raw": "{{base_url}}/api/chat/rooms/?status=pending",
 							"host": [
 								"{{base_url}}"
 							],
@@ -544,9 +751,16 @@
 								"chat",
 								"rooms",
 								""
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "Optional filter: pending, accepted, or declined"
+								}
 							]
 						},
-						"description": "Lists all active chat rooms involving the currently logged-in user, with nested previews of the last message."
+						"description": "Lists all active chat rooms involving the currently logged-in user. You can filter by status using the `status` query parameter (e.g. `?status=pending` to view all pending message requests)."
 					},
 					"response": []
 				},
@@ -570,6 +784,372 @@
 							]
 						},
 						"description": "Retrieves the historical chat message logs for a specific room. Automatically updates incoming messages status to read."
+					},
+					"response": []
+				},
+				{
+					"name": "Accept Chat Request (Doctor)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/chat/rooms/1/accept/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat",
+								"rooms",
+								"1",
+								"accept",
+								""
+							]
+						},
+						"description": "Allows a doctor to accept a pending message request from a patient."
+					},
+					"response": []
+				},
+				{
+					"name": "Decline Chat Request (Doctor)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/chat/rooms/1/decline/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat",
+								"rooms",
+								"1",
+								"decline",
+								""
+							]
+						},
+						"description": "Allows a doctor to decline a pending message request from a patient."
+					},
+					"response": []
+				},
+				{
+					"name": "Connect to Chat (WebSocket)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ws://127.0.0.1:8000/ws/chat/1/?token={{access_token}}",
+							"protocol": "ws",
+							"host": [
+								"127.0.0.1"
+							],
+							"port": "8000",
+							"path": [
+								"ws",
+								"chat",
+								"1",
+								""
+							],
+							"query": [
+								{
+									"key": "token",
+									"value": "{{access_token}}"
+								}
+							]
+						},
+						"description": "Connects to a chat room over WebSocket. To test this in Postman: Click '+' to open a new tab -> Select 'WebSocket' -> Enter `ws://127.0.0.1:8000/ws/chat/1/?token={{access_token}}` (or replace with your access_token and room ID) -> Click 'Connect'."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Chat Attachment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "room",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"description": "The image (PNG/JPG) or PDF file to upload in the chat."
+								},
+								{
+									"key": "message_type",
+									"value": "file",
+									"type": "text",
+									"description": "Optional: 'image' or 'file'. Defaults to 'file'."
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat/messages/upload/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat",
+								"messages",
+								"upload",
+								""
+							]
+						},
+						"description": "Allows a participant to upload an image or PDF document to the chat room. The backend will save the file and instantly broadcast the uploaded file's URL to all WebSocket connection participants in real time."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Doctor-Patient Relations",
+			"item": [
+				{
+					"name": "Add Patient under Care",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"patient\": 3,\n    \"disease_title\": \"Chronic Heart Disease\",\n    \"todays_progress\": 0,\n    \"health_goals\": \"Walk 10,000 steps daily\",\n    \"current_conditions\": \"Fatigue\",\n    \"current_medications\": \"Vitamin D\",\n    \"allergies_intolerances\": \"Lactose intolerance\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/patients/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"patients",
+								""
+							]
+						},
+						"description": "Allows a doctor (provider) to link a patient under their care."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Doctor's Patients (Home API)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/patients/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"patients",
+								""
+							]
+						},
+						"description": "Retrieves the full list of patients linked to the authenticated doctor, containing each patient's name, disease title, health goals, current conditions, medications, allergies, and last active timestamp."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Patient Relation Details",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"disease_title\": \"Hypertension & Heart Disease\",\n    \"health_goals\": \"Lose 5kg in 2 months\",\n    \"current_conditions\": \"High blood pressure\",\n    \"current_medications\": \"Lisinopril 10mg\",\n    \"allergies_intolerances\": \"Penicillin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/patients/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"patients",
+								"1",
+								""
+							]
+						},
+						"description": "Updates a patient's disease details, health goals, current conditions, medications, or allergies."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Patient from Care",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/patients/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"patients",
+								"1",
+								""
+							]
+						},
+						"description": "Deletes the relationship linking a patient to a doctor."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Protocols",
+			"item": [
+				{
+					"name": "Create Protocol",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"patient\": 3,\n    \"name\": \"Morning Walk Protocol\",\n    \"description\": \"Walk every morning to improve cardiovascular fitness\",\n    \"instructions\": \"Walk for 30 minutes at a brisk pace after waking up.\",\n    \"duration\": \"2 weeks\",\n    \"start_date\": \"2026-06-26\",\n    \"end_date\": \"2026-07-10\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/protocols/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"protocols",
+								""
+							]
+						},
+						"description": "Allows a doctor to assign a new protocol (task assignment) to a patient under their care."
+					},
+					"response": []
+				},
+				{
+					"name": "List Protocols",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/protocols/?patient_id=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"protocols",
+								""
+							],
+							"query": [
+								{
+									"key": "patient_id",
+									"value": "",
+									"description": "Required for doctors: The ID of the patient to see their specific protocols."
+								}
+							]
+						},
+						"description": "Retrieves the list of protocols. If called by a doctor, patient_id query parameter is required to view a dedicated patient's protocol list. If called by a patient, returns all protocols assigned to them."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Protocol",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Morning Walk Protocol - Updated\",\n    \"duration\": \"3 weeks\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/protocols/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"protocols",
+								"1",
+								""
+							]
+						},
+						"description": "Allows the doctor who created the protocol to edit details like name, duration, start/end date, or instructions."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Protocol",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/protocols/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"protocols",
+								"1",
+								""
+							]
+						},
+						"description": "Allows the doctor who created the protocol to delete it."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Protocol Done for Today",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/protocols/1/mark-done/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"protocols",
+								"1",
+								"mark-done",
+								""
+							]
+						},
+						"description": "Allows the assigned patient to mark the protocol as done for today. Dynamically updates overall progress percentage."
 					},
 					"response": []
 				}
