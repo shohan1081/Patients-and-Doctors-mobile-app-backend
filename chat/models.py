@@ -2,6 +2,11 @@ from django.db import models
 from django.conf import settings
 
 class ChatRoom(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+    ]
     doctor = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
@@ -14,13 +19,14 @@ class ChatRoom(models.Model):
         limit_choices_to={'role': 'patient'}, 
         related_name='patient_rooms'
     )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('doctor', 'patient')
 
     def __str__(self):
-        return f"Chat between {self.doctor.full_name} and {self.patient.full_name}"
+        return f"Chat between {self.doctor.full_name} and {self.patient.full_name} ({self.status})"
 
 class ChatMessage(models.Model):
     MSG_TYPE = [
