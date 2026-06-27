@@ -20,10 +20,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = f'chat_{self.room_id}'
 
-        # Get token from query string
+        # Get token from query string safely
+        from urllib.parse import parse_qs
         query_string = self.scope.get('query_string', b'').decode('utf-8')
-        query_params = dict(qc.split('=') for qc in query_string.split('&') if '=' in qc)
-        token = query_params.get('token', None)
+        query_params = parse_qs(query_string)
+        token = query_params.get('token', [None])[0]
 
         self.user = None
         if token:
@@ -56,7 +57,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except json.JSONDecodeError:
             return
 
-        content = data.get('content')
+        # Fallback to allow sending either 'message' or 'content'
+        content = data.get('message') or data.get('content')
         message_type = data.get('message_type', 'text')
 
         if not content:
@@ -78,6 +80,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'sender_name': self.user.full_name,
                 'content': content,
                 'message_type': message_type,
+                'attachment': db_message.attachment.url if db_message.attachment else None,
                 'created_at': db_message.created_at.isoformat()
             }
         )
@@ -89,8 +92,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'sender_id': event['sender_id'],
             'sender_email': event['sender_email'],
             'sender_name': event['sender_name'],
+            'message': event['content'],
             'content': event['content'],
             'message_type': event['message_type'],
+            'attachment': event.get('attachment'),
             'created_at': event['created_at']
         }))
 
@@ -108,6 +113,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         from .models import ChatRoom, ChatMessage
         try:
             room = ChatRoom.objects.get(id=room_id)
+            if room.status != 'accepted':
+                return None
             return ChatMessage.objects.create(
                 room=room,
                 sender=sender,
