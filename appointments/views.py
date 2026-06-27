@@ -6,8 +6,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from datetime import datetime, timedelta, time
 
-from .models import DoctorAvailability, Appointment
-from .serializers import DoctorAvailabilitySerializer, AppointmentSerializer
+from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog
+from .serializers import DoctorAvailabilitySerializer, AppointmentSerializer, DoctorPatientRelationSerializer, ProtocolSerializer
 
 User = get_user_model()
 
@@ -192,3 +192,116 @@ class GetAvailableSlotsView(APIView):
             "date": date_str,
             "slots": available_slots
         })
+
+
+class IsProvider(permissions.BasePermission):
+    """
+    Allows access only to provider (doctor) users.
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role == User.PROVIDER
+
+
+class DoctorPatientRelationViewSet(viewsets.ModelViewSet):
+    serializer_class = DoctorPatientRelationSerializer
+    permission_classes = [permissions.IsAuthenticated, IsProvider]
+
+    def get_queryset(self):
+        # Doctors can only see their own linked patients
+        return DoctorPatientRelation.objects.filter(doctor=self.request.user)
+
+    def perform_create(self, serializer):
+        # Auto-set doctor to the logged-in doctor (provider)
+        serializer.save(doctor=self.request.user)
+
+
+class IsProtocolDoctorOrReadOnly(permissions.BasePermission):
+    """
+    Object-level permission to only allow doctors of a protocol to edit/delete it.
+    """
+    def has_object_permission(self, request, view, obj):
+        # Allow the patient to mark the protocol as done
+        if view.action == 'mark_done':
+            return obj.patient == request.user
+
+        # Read permissions are allowed to both patient and doctor of the protocol
+        if request.method in permissions.SAFE_METHODS:
+            return obj.patient == request.user or obj.doctor == request.user
+        # Write permissions are only allowed to the doctor who created it
+        return obj.doctor == request.user
+
+
+class ProtocolViewSet(viewsets.ModelViewSet):
+    serializer_class = ProtocolSerializer
+    permission_classes = [permissions.IsAuthenticated, IsProtocolDoctorOrReadOnly]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == User.PROVIDER:
+            # Enforce patient_id query parameter only for listing protocols
+            if self.action == 'list':
+                patient_id = self.request.query_params.get('patient_id') or self.request.query_params.get('patient')
+                if not patient_id:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError(
+                        {"detail": "patient_id query parameter is required for doctors to view a patient's protocols."}
+                    )
+                queryset = Protocol.objects.filter(doctor=user, patient_id=patient_id)
+            else:
+                queryset = Protocol.objects.filter(doctor=user)
+        else:
+            # Patients see protocols assigned to them
+            queryset = Protocol.objects.filter(patient=user)
+
+        # Support filtering by active_today
+        active_today = self.request.query_params.get('active_today')
+        if active_today == 'true':
+            today = datetime.now().date()
+            queryset = queryset.filter(start_date__lte=today, end_date__gte=today)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        # Auto-set the logged-in doctor
+        if self.request.user.role != User.PROVIDER:
+            self.permission_denied(
+                self.request,
+                message="Only doctors can create/assign protocols."
+            )
+        serializer.save(doctor=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='mark-done')
+    def mark_done(self, request, pk=None):
+        protocol = self.get_object()
+
+        # Access control: only the assigned patient can mark it as done
+        if request.user != protocol.patient:
+            return Response(
+                {"detail": "Only the assigned patient can mark this protocol as done."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        today = datetime.now().date()
+
+        # Check if today is within protocol active range
+        if not (protocol.start_date <= today <= protocol.end_date):
+            return Response(
+                {"detail": "This protocol is not active today."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get or create completion log for today
+        log, created = ProtocolLog.objects.get_or_create(protocol=protocol, date=today)
+        if not created:
+            return Response(
+                {"detail": "This protocol is already marked as done for today.", "progress_percentage": protocol.progress_percentage},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response({
+            "detail": "Protocol marked as done for today.",
+            "progress_percentage": protocol.progress_percentage,
+            "completed_today": True
+        }, status=status.HTTP_200_OK)
+
+
