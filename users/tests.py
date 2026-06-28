@@ -707,6 +707,29 @@ class RecipeTests(APITestCase):
         # Verify deleted
         self.assertFalse(Recipe.objects.filter(id=recipe.id).exists())
 
+    def test_search_recipes_by_name(self):
+        from appointments.models import Recipe
+        Recipe.objects.create(
+            name="Chicken Avocado Salad", category="lunch", ingredients="Greens, Chicken", instructions="Mix", creator=self.doctor
+        )
+        Recipe.objects.create(
+            name="Beef Pasta", category="dinner", ingredients="Pasta, Beef", instructions="Cook", creator=self.doctor
+        )
+
+        # 1. Doctor search
+        self.client.force_authenticate(user=self.doctor)
+        response = self.client.get(self.recipes_url, {"search": "avocado"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["name"], "Chicken Avocado Salad")
+
+        # 2. Patient search using "q"
+        self.client.force_authenticate(user=self.patient)
+        response_q = self.client.get(self.recipes_url, {"q": "beef"})
+        self.assertEqual(response_q.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response_q.data), 1)
+        self.assertEqual(response_q.data[0]["name"], "Beef Pasta")
+
 
 
 
