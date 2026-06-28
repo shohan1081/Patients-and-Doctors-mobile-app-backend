@@ -731,6 +731,108 @@ class RecipeTests(APITestCase):
         self.assertEqual(response_q.data[0]["name"], "Beef Pasta")
 
 
+class VideoConsultTests(APITestCase):
+    def setUp(self):
+        # Create user accounts
+        self.patient = User.objects.create_user(
+            email="pat_v@example.com", username="pat_v@example.com", full_name="John Doe", role=User.PATIENT, is_verified=True
+        )
+        self.patient.set_password("Password123!")
+        self.patient.save()
+
+        self.doctor = User.objects.create_user(
+            email="doc_v@example.com", username="doc_v@example.com", full_name="Dr. House", role=User.PROVIDER, is_verified=True
+        )
+        self.doctor.set_password("Password123!")
+        self.doctor.save()
+
+        # Create admin
+        self.admin = User.objects.create_superuser(
+            email="admin_v@example.com", username="admin_v@example.com", full_name="System Admin"
+        )
+        self.admin.set_password("Password123!")
+        self.admin.save()
+
+        self.video_url = "/api/appointments/video-consults/"
+
+    def test_list_videos_authenticated(self):
+        from appointments.models import VideoConsult
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        video_file = SimpleUploadedFile("test_video.mp4", b"content", content_type="video/mp4")
+        
+        VideoConsult.objects.create(
+            title="Cardiovascular Health 101",
+            description="Instructions to maintain a healthy heart.",
+            video_file=video_file
+        )
+
+        self.client.force_authenticate(user=self.patient)
+        response = self.client.get(self.video_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "Cardiovascular Health 101")
+        self.assertFalse(response.data[0]["is_favorite"])
+
+    def test_create_video_restricted_to_admin(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        video_file = SimpleUploadedFile("test_video.mp4", b"content", content_type="video/mp4")
+        data = {
+            "title": "Healthy Cooking",
+            "description": "How to cook healthy meals.",
+            "video_file": video_file
+        }
+
+        # 1. Doctor (non-admin) fails
+        self.client.force_authenticate(user=self.doctor)
+        video_file.seek(0)
+        response = self.client.post(self.video_url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # 2. Patient fails
+        self.client.force_authenticate(user=self.patient)
+        video_file.seek(0)
+        response = self.client.post(self.video_url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # 3. Admin succeeds
+        self.client.force_authenticate(user=self.admin)
+        video_file.seek(0)
+        response_admin = self.client.post(self.video_url, data, format='multipart')
+        self.assertEqual(response_admin.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response_admin.data["title"], "Healthy Cooking")
+
+    def test_favorite_unfavorite_video(self):
+        from appointments.models import VideoConsult
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        video_file = SimpleUploadedFile("test_video.mp4", b"content", content_type="video/mp4")
+        
+        video = VideoConsult.objects.create(
+            title="Yoga Exercise",
+            description="Yoga exercises for morning routine.",
+            video_file=video_file
+        )
+
+        # 1. Favorite
+        self.client.force_authenticate(user=self.patient)
+        response = self.client.post(f"{self.video_url}{video.id}/favorite/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verify is_favorite
+        response_get = self.client.get(f"{self.video_url}{video.id}/")
+        self.assertTrue(response_get.data["is_favorite"])
+
+        # 2. Filter favorites
+        response_list = self.client.get(self.video_url, {"is_favorite": "true"})
+        self.assertEqual(len(response_list.data), 1)
+
+        # 3. Unfavorite
+        response_unfav = self.client.post(f"{self.video_url}{video.id}/unfavorite/")
+        self.assertEqual(response_unfav.status_code, status.HTTP_200_OK)
+        
+        response_get2 = self.client.get(f"{self.video_url}{video.id}/")
+        self.assertFalse(response_get2.data["is_favorite"])
+
+
 
 
 
