@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol
+from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, Recipe, RecipeFavorite, RecipeRecommendation
 from users.serializers import UserSerializer
 
 User = get_user_model()
@@ -142,6 +142,49 @@ class ProtocolSerializer(serializers.ModelSerializer):
             if not DoctorPatientRelation.objects.filter(doctor=doctor, patient=patient).exists():
                 raise serializers.ValidationError("You can only assign protocols to patients under your care.")
         return attrs
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    category = serializers.CharField()
+    creator_id = serializers.IntegerField(source='creator.id', read_only=True)
+    creator_name = serializers.CharField(source='creator.full_name', read_only=True)
+    is_favorite = serializers.SerializerMethodField()
+    is_recommended = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id', 'name', 'recipe_photo', 'category', 'ingredients', 
+            'instructions', 'nutrition_notes', 'creator_id', 'creator_name',
+            'is_favorite', 'is_recommended', 'created_at', 'updated_at'
+        )
+        read_only_fields = ('creator', 'created_at', 'updated_at')
+
+    def get_is_favorite(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            return obj.favorites.filter(user=request.user).exists()
+        return False
+
+    def get_is_recommended(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            if request.user.role == User.PATIENT:
+                return obj.recommendations.filter(patient=request.user).exists()
+            else:
+                patient_id = request.query_params.get('patient_id') if hasattr(request, 'query_params') else None
+                if patient_id:
+                    return obj.recommendations.filter(patient_id=patient_id).exists()
+        return False
+
+    def validate_category(self, value):
+        val = value.lower().strip()
+        if val == 'lanch':
+            return 'lunch'
+        valid_cats = ['breakfast', 'lunch', 'dinner', 'snacks']
+        if val not in valid_cats:
+            raise serializers.ValidationError(f"Category must be one of: {', '.join(valid_cats)}")
+        return val
 
 
 
