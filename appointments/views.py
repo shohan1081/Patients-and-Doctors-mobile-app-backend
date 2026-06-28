@@ -6,8 +6,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from datetime import datetime, timedelta, time
 
-from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog, Recipe, RecipeFavorite, RecipeRecommendation
-from .serializers import DoctorAvailabilitySerializer, AppointmentSerializer, DoctorPatientRelationSerializer, ProtocolSerializer, RecipeSerializer
+from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog, Recipe, RecipeFavorite, RecipeRecommendation, VideoConsult, VideoFavorite
+from .serializers import DoctorAvailabilitySerializer, AppointmentSerializer, DoctorPatientRelationSerializer, ProtocolSerializer, RecipeSerializer, VideoConsultSerializer
 
 User = get_user_model()
 
@@ -448,6 +448,69 @@ class RecipeViewSet(viewsets.ModelViewSet):
         RecipeRecommendation.objects.filter(recipe=recipe, patient_id=patient_id, doctor=request.user).delete()
         return Response(
             {"detail": f"Recipe '{recipe.name}' recommendation removed."},
+            status=status.HTTP_200_OK
+        )
+
+
+class IsAdminOrReadOnly(permissions.BasePermission):
+    """
+    Allow read-only to anyone authenticated, but write options only to admin/staff users.
+    """
+    def has_permission(self, request, view):
+        if view.action in ['favorite', 'unfavorite']:
+            return True
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user and request.user.is_authenticated and request.user.is_staff
+
+    def has_object_permission(self, request, view, obj):
+        if view.action in ['favorite', 'unfavorite']:
+            return True
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user and request.user.is_authenticated and request.user.is_staff
+
+
+class VideoConsultViewSet(viewsets.ModelViewSet):
+    queryset = VideoConsult.objects.all()
+    serializer_class = VideoConsultSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        queryset = VideoConsult.objects.all()
+
+        # Support category/filter logic for favorites
+        favorites_param = self.request.query_params.get('is_favorite') or self.request.query_params.get('favorites')
+        if favorites_param == 'true':
+            queryset = queryset.filter(favorites__user=self.request.user)
+
+        return queryset
+
+    @action(detail=True, methods=['post'], url_path='favorite')
+    def favorite(self, request, pk=None):
+        video = self.get_object()
+        if request.user.role != User.PATIENT:
+            return Response(
+                {"detail": "Only patients can favorite videos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        VideoFavorite.objects.get_or_create(user=request.user, video=video)
+        return Response(
+            {"detail": f"Video '{video.title}' added to favorites."},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'], url_path='unfavorite')
+    def unfavorite(self, request, pk=None):
+        video = self.get_object()
+        if request.user.role != User.PATIENT:
+            return Response(
+                {"detail": "Only patients can unfavorite videos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        VideoFavorite.objects.filter(user=request.user, video=video).delete()
+        return Response(
+            {"detail": f"Video '{video.title}' removed from favorites."},
             status=status.HTTP_200_OK
         )
 
