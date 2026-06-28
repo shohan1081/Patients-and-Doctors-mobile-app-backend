@@ -163,3 +163,76 @@ class ProtocolLog(models.Model):
         return f"Log: Protocol '{self.protocol.name}' completed on {self.date}"
 
 
+class Recipe(models.Model):
+    CATEGORY_CHOICES = (
+        ('breakfast', 'Breakfast'),
+        ('lunch', 'Lunch'),
+        ('dinner', 'Dinner'),
+        ('snacks', 'Snacks'),
+    )
+    name = models.CharField(max_length=255)
+    recipe_photo = models.ImageField(upload_to='recipes/', blank=True, null=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    ingredients = models.TextField()
+    instructions = models.TextField()
+    nutrition_notes = models.TextField(blank=True, null=True)
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'provider'},
+        related_name='created_recipes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class RecipeFavorite(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='recipe_favorites'
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favorites'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'recipe')
+        ordering = ['-created_at']
+
+
+class RecipeRecommendation(models.Model):
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='recommendations'
+    )
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'patient'},
+        related_name='recipe_recommendations'
+    )
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'provider'},
+        related_name='given_recipe_recommendations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('recipe', 'patient')
+        ordering = ['-created_at']
+
+
+
