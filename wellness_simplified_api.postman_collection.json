@@ -1153,6 +1153,232 @@
 					},
 					"response": []
 				}
+		},
+		{
+			"name": "Recipes",
+			"item": [
+				{
+					"name": "Create Recipe",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Keto Avocado Salad\",\n    \"category\": \"lunch\",\n    \"ingredients\": \"Avocado, Cherry Tomatoes, Cucumber, Olive Oil, Lemon Juice, Salt, Pepper\",\n    \"instructions\": \"1. Chop avocado, tomatoes, and cucumber.\\n2. Combine in a bowl.\\n3. Drizzle with olive oil and lemon juice.\\n4. Toss and season with salt and pepper.\",\n    \"nutrition_notes\": \"High in healthy monounsaturated fats, low carb, excellent for cardiovascular support.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/recipes/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"recipes",
+								""
+							]
+						},
+						"description": "Allows a doctor (provider) to create a new recipe (meal instruction)."
+					},
+					"response": []
+				},
+				{
+					"name": "List Recipes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/recipes/?category=&is_favorite=&recommended=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"recipes",
+								""
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "",
+									"description": "Filter by category (breakfast, lunch, dinner, snacks)"
+								},
+								{
+									"key": "is_favorite",
+									"value": "",
+									"description": "Set to 'true' to get only user's favorited recipes"
+								},
+								{
+									"key": "recommended",
+									"value": "",
+									"description": "Set to 'true' to get recipes recommended to patient"
+								}
+							]
+						},
+						"description": "Lists all recipes. Patients can filter by category, favorites, or recommendations."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Recipe Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/recipes/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"recipes",
+								"1",
+								""
+							]
+						},
+						"description": "Gets detail view of a single recipe, including whether it is favorited or recommended to the user."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Recipe",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/recipes/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"recipes",
+								"1",
+								""
+							]
+						},
+						"description": "Allows the creator doctor to delete a recipe."
+					},
+					"response": []
+				},
+				{
+					"name": "Favorite Recipe",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/recipes/1/favorite/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"recipes",
+								"1",
+								"favorite",
+								""
+							]
+						},
+						"description": "Allows a patient to add a recipe to their favorites."
+					},
+					"response": []
+				},
+				{
+					"name": "Unfavorite Recipe",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/recipes/1/unfavorite/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"recipes",
+								"1",
+								"unfavorite",
+								""
+							]
+						},
+						"description": "Allows a patient to remove a recipe from their favorites."
+					},
+					"response": []
+				},
+				{
+					"name": "Recommend Recipe to Patient",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"patient\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/recipes/1/recommend/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"recipes",
+								"1",
+								"recommend",
+								""
+							]
+						},
+						"description": "Allows a doctor to recommend a recipe to a specific patient under their care."
+					},
+					"response": []
+				},
+				{
+					"name": "Unrecommend Recipe from Patient",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"patient\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/recipes/1/unrecommend/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"recipes",
+								"1",
+								"unrecommend",
+								""
+							]
+						},
+						"description": "Allows a doctor to withdraw a recipe recommendation for a specific patient."
+					},
+					"response": []
+				}
 			]
 		}
 	],
