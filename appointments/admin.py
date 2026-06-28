@@ -1,6 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog
+from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog, Recipe, RecipeFavorite, RecipeRecommendation
 
 @admin.register(DoctorAvailability)
 class DoctorAvailabilityAdmin(ModelAdmin):
@@ -38,4 +38,28 @@ class ProtocolLogAdmin(ModelAdmin):
     list_filter = ('date', 'completed_at')
     search_fields = ('protocol__name', 'protocol__patient__email', 'protocol__patient__full_name')
     ordering = ('-completed_at',)
+
+
+@admin.register(Recipe)
+class RecipeAdmin(ModelAdmin):
+    list_display = ('name', 'category', 'creator', 'created_at')
+    list_filter = ('category', 'created_at')
+    search_fields = ('name', 'ingredients', 'creator__email', 'creator__full_name')
+    ordering = ('-created_at',)
+
+
+@admin.register(RecipeFavorite)
+class RecipeFavoriteAdmin(ModelAdmin):
+    list_display = ('user', 'recipe', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__email', 'user__full_name', 'recipe__name')
+    ordering = ('-created_at',)
+
+
+@admin.register(RecipeRecommendation)
+class RecipeRecommendationAdmin(ModelAdmin):
+    list_display = ('recipe', 'patient', 'doctor', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('recipe__name', 'patient__email', 'patient__full_name', 'doctor__email', 'doctor__full_name')
+    ordering = ('-created_at',)
 
