@@ -1386,6 +1386,170 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Video Consults",
+			"item": [
+				{
+					"name": "Create Video Consult (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Cardiovascular Health Guide",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "An educational video mapping heart rate controls and general warmups.",
+									"type": "text"
+								},
+								{
+									"key": "video_file",
+									"type": "file",
+									"src": ""
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/appointments/video-consults/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"video-consults",
+								""
+							]
+						},
+						"description": "Allows an admin/staff user to upload a new video consult with file, title, and description."
+					},
+					"response": []
+				},
+				{
+					"name": "List Video Consults",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/video-consults/?is_favorite=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"video-consults",
+								""
+							],
+							"query": [
+								{
+									"key": "is_favorite",
+									"value": "",
+									"description": "Set to 'true' to list only user's favorited videos"
+								}
+							]
+						},
+						"description": "Lists all video consults. Patients can filter by their favorites."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Video Consult Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/video-consults/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"video-consults",
+								"1",
+								""
+							]
+						},
+						"description": "Retrieves metadata and video file path for a single video consult, along with is_favorite state."
+					},
+					"response": []
+				},
+				{
+					"name": "Favorite Video",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/video-consults/1/favorite/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"video-consults",
+								"1",
+								"favorite",
+								""
+							]
+						},
+						"description": "Allows patients to add a video to their favorites list."
+					},
+					"response": []
+				},
+				{
+					"name": "Unfavorite Video",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/video-consults/1/unfavorite/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"video-consults",
+								"1",
+								"unfavorite",
+								""
+							]
+						},
+						"description": "Allows patients to remove a video from their favorites list."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Video Consult (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/appointments/video-consults/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"appointments",
+								"video-consults",
+								"1",
+								""
+							]
+						},
+						"description": "Allows admin/staff users to delete a video consult."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
