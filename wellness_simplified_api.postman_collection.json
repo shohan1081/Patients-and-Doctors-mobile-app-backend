@@ -1194,7 +1194,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/appointments/recipes/?category=&is_favorite=&recommended=",
+							"raw": "{{base_url}}/api/appointments/recipes/?category=&is_favorite=&recommended=&search=",
 							"host": [
 								"{{base_url}}"
 							],
@@ -1219,6 +1219,11 @@
 									"key": "recommended",
 									"value": "",
 									"description": "Set to 'true' to get recipes recommended to patient"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search recipes by name (case-insensitive)"
 								}
 							]
 						},
