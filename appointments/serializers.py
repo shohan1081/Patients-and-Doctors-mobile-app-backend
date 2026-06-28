@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, Recipe, RecipeFavorite, RecipeRecommendation
+from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, Recipe, RecipeFavorite, RecipeRecommendation, VideoConsult, VideoFavorite
 from users.serializers import UserSerializer
 
 User = get_user_model()
@@ -185,6 +185,23 @@ class RecipeSerializer(serializers.ModelSerializer):
         if val not in valid_cats:
             raise serializers.ValidationError(f"Category must be one of: {', '.join(valid_cats)}")
         return val
+
+
+class VideoConsultSerializer(serializers.ModelSerializer):
+    is_favorite = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VideoConsult
+        fields = (
+            'id', 'title', 'description', 'video_file', 'is_favorite', 'created_at', 'updated_at'
+        )
+        read_only_fields = ('created_at', 'updated_at')
+
+    def get_is_favorite(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            return obj.favorites.filter(user=request.user).exists()
+        return False
 
 
 
