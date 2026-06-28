@@ -6,8 +6,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from datetime import datetime, timedelta, time
 
-from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog
-from .serializers import DoctorAvailabilitySerializer, AppointmentSerializer, DoctorPatientRelationSerializer, ProtocolSerializer
+from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog, Recipe, RecipeFavorite, RecipeRecommendation
+from .serializers import DoctorAvailabilitySerializer, AppointmentSerializer, DoctorPatientRelationSerializer, ProtocolSerializer, RecipeSerializer
 
 User = get_user_model()
 
@@ -303,5 +303,147 @@ class ProtocolViewSet(viewsets.ModelViewSet):
             "progress_percentage": protocol.progress_percentage,
             "completed_today": True
         }, status=status.HTTP_200_OK)
+
+
+class IsRecipeCreatorOrReadOnly(permissions.BasePermission):
+    """
+    Allow read-only requests to any user, but edits/deletes only to the doctor creator.
+    """
+    def has_object_permission(self, request, view, obj):
+        # Allow favorite / unfavorite / recommend / unrecommend actions to pass object level checks
+        if view.action in ['favorite', 'unfavorite', 'recommend', 'unrecommend']:
+            return True
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.creator == request.user
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    permission_classes = [permissions.IsAuthenticated, IsRecipeCreatorOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Recipe.objects.all()
+
+        # Support category filter (e.g. ?category=breakfast)
+        category_param = self.request.query_params.get('category')
+        if category_param:
+            queryset = queryset.filter(category=category_param)
+
+        # Support favorites filter (e.g. ?is_favorite=true or ?favorites=true)
+        favorites_param = self.request.query_params.get('is_favorite') or self.request.query_params.get('favorites')
+        if favorites_param == 'true':
+            queryset = queryset.filter(favorites__user=self.request.user)
+
+        # Support recommended filter (e.g. ?recommended=true)
+        recommended_param = self.request.query_params.get('recommended')
+        if recommended_param == 'true':
+            # For patients, return recipes recommended to them
+            if self.request.user.role == User.PATIENT:
+                queryset = queryset.filter(recommendations__patient=self.request.user)
+            # For doctors, return recipes recommended to a patient_id query param
+            else:
+                patient_id = self.request.query_params.get('patient_id')
+                if patient_id:
+                    queryset = queryset.filter(recommendations__patient_id=patient_id)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        # Only doctors (providers) can create recipes
+        if self.request.user.role != User.PROVIDER:
+            self.permission_denied(
+                self.request,
+                message="Only doctors can create recipes."
+            )
+        serializer.save(creator=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='favorite')
+    def favorite(self, request, pk=None):
+        recipe = self.get_object()
+        if request.user.role != User.PATIENT:
+            return Response(
+                {"detail": "Only patients can favorite recipes."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        RecipeFavorite.objects.get_or_create(user=request.user, recipe=recipe)
+        return Response(
+            {"detail": f"Recipe '{recipe.name}' added to favorites."},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'], url_path='unfavorite')
+    def unfavorite(self, request, pk=None):
+        recipe = self.get_object()
+        if request.user.role != User.PATIENT:
+            return Response(
+                {"detail": "Only patients can unfavorite recipes."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        RecipeFavorite.objects.filter(user=request.user, recipe=recipe).delete()
+        return Response(
+            {"detail": f"Recipe '{recipe.name}' removed from favorites."},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'], url_path='recommend')
+    def recommend(self, request, pk=None):
+        recipe = self.get_object()
+        if request.user.role != User.PROVIDER:
+            return Response(
+                {"detail": "Only doctors can recommend recipes."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        patient_id = request.data.get('patient')
+        if not patient_id:
+            return Response(
+                {"detail": "patient ID is required in request body."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            patient = User.objects.get(id=patient_id, role=User.PATIENT)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Selected patient does not exist."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Enforce that the patient is under this doctor's care
+        if not DoctorPatientRelation.objects.filter(doctor=request.user, patient=patient).exists():
+            return Response(
+                {"detail": "You can only recommend recipes to patients under your care."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        RecipeRecommendation.objects.get_or_create(recipe=recipe, patient=patient, doctor=request.user)
+        return Response(
+            {"detail": f"Recipe '{recipe.name}' recommended to patient '{patient.full_name}'."},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'], url_path='unrecommend')
+    def unrecommend(self, request, pk=None):
+        recipe = self.get_object()
+        if request.user.role != User.PROVIDER:
+            return Response(
+                {"detail": "Only doctors can unrecommend recipes."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        patient_id = request.data.get('patient')
+        if not patient_id:
+            return Response(
+                {"detail": "patient ID is required in request body."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        RecipeRecommendation.objects.filter(recipe=recipe, patient_id=patient_id, doctor=request.user).delete()
+        return Response(
+            {"detail": f"Recipe '{recipe.name}' recommendation removed."},
+            status=status.HTTP_200_OK
+        )
 
 
