@@ -600,6 +600,114 @@ class ProtocolTests(APITestCase):
         self.assertEqual(response.data["detail"], "You do not have permission to perform this action.")
 
 
+class RecipeTests(APITestCase):
+    def setUp(self):
+        # Create user accounts
+        self.doctor = User.objects.create_user(
+            email="doc_r@example.com", username="doc_r@example.com", full_name="Dr. Smith", role=User.PROVIDER, is_verified=True
+        )
+        self.doctor.set_password("Password123!")
+        self.doctor.save()
+
+        self.patient = User.objects.create_user(
+            email="pat_r@example.com", username="pat_r@example.com", full_name="John Doe", role=User.PATIENT, is_verified=True
+        )
+        self.patient.set_password("Password123!")
+        self.patient.save()
+
+        # Link patient to doctor
+        from appointments.models import DoctorPatientRelation
+        DoctorPatientRelation.objects.create(doctor=self.doctor, patient=self.patient, disease_title="Flu")
+
+        self.recipes_url = "/api/appointments/recipes/"
+
+    def test_doctor_create_recipe_success(self):
+        self.client.force_authenticate(user=self.doctor)
+        data = {
+            "name": "Keto Avocado Salad",
+            "category": "lanch", # normalizes to lunch
+            "ingredients": "Avocado, Tomatoes, Olive Oil",
+            "instructions": "Mix them together.",
+            "nutrition_notes": "Rich in healthy fats."
+        }
+        response = self.client.post(self.recipes_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], "Keto Avocado Salad")
+        self.assertEqual(response.data["category"], "lunch")
+        self.assertEqual(response.data["creator_id"], self.doctor.id)
+
+    def test_patient_cannot_create_recipe(self):
+        self.client.force_authenticate(user=self.patient)
+        data = {
+            "name": "Malicious Recipe",
+            "category": "dinner",
+            "ingredients": "Sugar",
+            "instructions": "Eat sugar."
+        }
+        response = self.client.post(self.recipes_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_favorite_unfavorite_recipe(self):
+        from appointments.models import Recipe
+        recipe = Recipe.objects.create(
+            name="Smoothie", category="breakfast", ingredients="Milk, Banana", instructions="Blend", creator=self.doctor
+        )
+
+        # 1. Favorite
+        self.client.force_authenticate(user=self.patient)
+        response = self.client.post(f"{self.recipes_url}{recipe.id}/favorite/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify serialization includes is_favorite
+        response_get = self.client.get(f"{self.recipes_url}{recipe.id}/")
+        self.assertTrue(response_get.data["is_favorite"])
+
+        # 2. Filter favorites list
+        response_list = self.client.get(self.recipes_url, {"is_favorite": "true"})
+        self.assertEqual(len(response_list.data), 1)
+
+        # 3. Unfavorite
+        response_unfav = self.client.post(f"{self.recipes_url}{recipe.id}/unfavorite/")
+        self.assertEqual(response_unfav.status_code, status.HTTP_200_OK)
+        
+        response_get2 = self.client.get(f"{self.recipes_url}{recipe.id}/")
+        self.assertFalse(response_get2.data["is_favorite"])
+
+    def test_recommend_recipe_success(self):
+        from appointments.models import Recipe
+        recipe = Recipe.objects.create(
+            name="Salad", category="lunch", ingredients="Greens", instructions="Toss", creator=self.doctor
+        )
+
+        # Doctor recommends
+        self.client.force_authenticate(user=self.doctor)
+        data = {"patient": self.patient.id}
+        response = self.client.post(f"{self.recipes_url}{recipe.id}/recommend/", data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Patient reads
+        self.client.force_authenticate(user=self.patient)
+        response_get = self.client.get(f"{self.recipes_url}{recipe.id}/")
+        self.assertTrue(response_get.data["is_recommended"])
+
+        # Filter recommended list
+        response_list = self.client.get(self.recipes_url, {"recommended": "true"})
+        self.assertEqual(len(response_list.data), 1)
+
+    def test_doctor_can_delete_recipe(self):
+        from appointments.models import Recipe
+        recipe = Recipe.objects.create(
+            name="Salad", category="lunch", ingredients="Greens", instructions="Toss", creator=self.doctor
+        )
+
+        self.client.force_authenticate(user=self.doctor)
+        response = self.client.delete(f"{self.recipes_url}{recipe.id}/")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Verify deleted
+        self.assertFalse(Recipe.objects.filter(id=recipe.id).exists())
+
+
 
 
 
