@@ -235,4 +235,37 @@ class RecipeRecommendation(models.Model):
         ordering = ['-created_at']
 
 
+class VideoConsult(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    video_file = models.FileField(upload_to='videos/')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class VideoFavorite(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='video_favorites'
+    )
+    video = models.ForeignKey(
+        VideoConsult,
+        on_delete=models.CASCADE,
+        related_name='favorites'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'video')
+        ordering = ['-created_at']
+
+
+
 
