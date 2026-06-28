@@ -1,6 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog, Recipe, RecipeFavorite, RecipeRecommendation
+from .models import DoctorAvailability, Appointment, DoctorPatientRelation, Protocol, ProtocolLog, Recipe, RecipeFavorite, RecipeRecommendation, VideoConsult, VideoFavorite
 
 @admin.register(DoctorAvailability)
 class DoctorAvailabilityAdmin(ModelAdmin):
@@ -61,5 +61,21 @@ class RecipeRecommendationAdmin(ModelAdmin):
     list_display = ('recipe', 'patient', 'doctor', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('recipe__name', 'patient__email', 'patient__full_name', 'doctor__email', 'doctor__full_name')
+    ordering = ('-created_at',)
+
+
+@admin.register(VideoConsult)
+class VideoConsultAdmin(ModelAdmin):
+    list_display = ('title', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('title', 'description')
+    ordering = ('-created_at',)
+
+
+@admin.register(VideoFavorite)
+class VideoFavoriteAdmin(ModelAdmin):
+    list_display = ('user', 'video', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__email', 'user__full_name', 'video__title')
     ordering = ('-created_at',)
 
