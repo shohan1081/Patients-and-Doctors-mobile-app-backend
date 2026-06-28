@@ -348,6 +348,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 if patient_id:
                     queryset = queryset.filter(recommendations__patient_id=patient_id)
 
+        # Support search query parameter for recipe name (e.g. ?search=salad or ?q=salad or ?name=salad)
+        search_query = self.request.query_params.get('search') or self.request.query_params.get('q') or self.request.query_params.get('name')
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+
         return queryset
 
     def perform_create(self, serializer):
