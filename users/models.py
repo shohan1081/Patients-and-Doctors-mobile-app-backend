@@ -36,11 +36,10 @@ class User(AbstractUser):
     last_active = models.DateTimeField(blank=True, null=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'full_name']
+    REQUIRED_FIELDS = ['full_name']
 
     def save(self, *args, **kwargs):
-        if not self.username:
-            self.username = self.email
+        self.username = self.email
             
         send_verification_email = False
         if self.role == self.PROVIDER:
