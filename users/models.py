@@ -9,7 +9,30 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class CustomUserManager(UserManager):
+    def create_user(self, email, username=None, password=None, **extra_fields):
+        if not email:
+            raise ValueError("The Email field must be set")
+        email = self.normalize_email(email)
+        if not username:
+            username = email
+        return super().create_user(username, email, password, **extra_fields)
+
+    def create_superuser(self, email, username=None, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if not email:
+            raise ValueError("The Email field must be set")
+        email = self.normalize_email(email)
+        if not username:
+            username = email
+        return super().create_superuser(username, email, password, **extra_fields)
+
+
 class User(AbstractUser):
+    objects = CustomUserManager()
     PATIENT = 'patient'
     PROVIDER = 'provider'
     ROLE_CHOICES = [
@@ -316,7 +339,7 @@ class User(AbstractUser):
         return f"{self.email} ({self.role})"
 
 
-class PendingProviderManager(UserManager):
+class PendingProviderManager(CustomUserManager):
     def get_queryset(self):
         return super().get_queryset().filter(role='provider', is_verified=False)
 class ProviderProfile(models.Model):
